@@ -74,6 +74,10 @@ public class HelpMojo extends AbstractMojo {
                 "                    <generateBuild>false</generateBuild>\n" +
                 "                    <!-- 是否多模块项目 -->\n" +
                 "                    <multiModule>true</multiModule>\n" +
+                "                    <!-- 实体辅助类输出包 -->\n" +
+                        "            <entityMetaInfoClassOutputPackage></entityMetaInfoClassOutputPackage>\n" +
+                "                    <!-- 实体辅助类输出模式，绝对路径或相对路径，abs|ref -->\n" +
+                "                    <entityMetaInfoClassOutputMode>abs</entityMetaInfoClassOutputMode>\n" +
                 "                    <!-- 项目包根路径 -->\n" +
                 "                    <basePackage>org.netcorepal.cap4j.ddd.example</basePackage>\n" +
                 "                </configuration>");

@@ -230,6 +230,13 @@ public class GenEntityMojo extends AbstractMojo {
     @Parameter(property = "entityMetaInfoClassOutputPackage", defaultValue = "")
     private String entityMetaInfoClassOutputPackage = "";
     /**
+     * 实体辅助类输出模式，绝对路径或相对路径，abs|ref
+     *
+     * @parameter expression="${entityMetaInfoClassOutputMode}"
+     */
+    @Parameter(property = "entityMetaInfoClassOutputMode", defaultValue = "")
+    private String entityMetaInfoClassOutputMode = "abs";
+    /**
      * 实体基础类
      *
      * @parameter expression="${entityBaseClass}"
@@ -1446,7 +1453,12 @@ public class GenEntityMojo extends AbstractMojo {
 
     public void writeSchemaSourceFile(Map<String, Object> table, List<Map<String, Object>> columns, Map<String, String> tablePackageMap, Map<String, Map<String, String>> relations, String basePackage, String baseDir) throws IOException {
         String tableName = MysqlSchemaUtils.getTableName(table);
-        String packageName = basePackage + "." + entityMetaInfoClassOutputPackage + ".schemas";
+        String packageName = null;
+        if("abs".equalsIgnoreCase(entityMetaInfoClassOutputMode)) {
+            packageName = basePackage + "." + entityMetaInfoClassOutputPackage + ".schemas";
+        } else {
+            packageName = tablePackageMap.get(tableName) + ".schemas";
+        }
         String simpleClassName = getEntityJavaType(tableName);
 
         new File(SourceFileUtils.resolveDirectory(baseDir, packageName)).mkdirs();
