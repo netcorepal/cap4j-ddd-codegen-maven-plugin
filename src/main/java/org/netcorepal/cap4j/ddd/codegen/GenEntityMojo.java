@@ -15,7 +15,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -313,7 +312,7 @@ public class GenEntityMojo extends AbstractMojo {
         for (Map<String, Object> table :
                 tables) {
             List<Map<String, Object>> tableColumns = columns.stream().filter(col -> col.get("TABLE_NAME").equals(table.get("TABLE_NAME")))
-                    .sorted((a, b) -> ((BigInteger) a.get("ORDINAL_POSITION")).subtract((BigInteger) b.get("ORDINAL_POSITION")).intValue())
+                    .sorted((a, b) -> (Integer.parseInt(a.get("ORDINAL_POSITION").toString()))- Integer.parseInt( b.get("ORDINAL_POSITION").toString()))
                     .collect(Collectors.toList());
             TableMap.put(MysqlSchemaUtils.getTableName(table), table);
             ColumnsMap.put(MysqlSchemaUtils.getTableName(table), tableColumns);
