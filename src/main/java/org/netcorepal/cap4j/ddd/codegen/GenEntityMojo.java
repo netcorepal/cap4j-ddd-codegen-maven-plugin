@@ -289,7 +289,7 @@ public class GenEntityMojo extends AbstractMojo {
                 : SourceFileUtils.resolveBasePackage(domainModulePath);
         getLog().info("基础包名：" + basePackage);
         if (StringUtils.isBlank(entityMetaInfoClassOutputPackage)) {
-            entityMetaInfoClassOutputPackage = "domain.meta";
+            entityMetaInfoClassOutputPackage = "domain._share.meta";
         }
 
         String tableSql = "select * from `information_schema`.`tables` where table_schema= '" + schema + "'";
