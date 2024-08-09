@@ -226,8 +226,8 @@ public class GenEntityMojo extends AbstractMojo {
      *
      * @parameter expression="${entityMetaInfoClassOutputPackage}"
      */
-    @Parameter(property = "entityMetaInfoClassOutputPackage", defaultValue = "")
-    private String entityMetaInfoClassOutputPackage = "";
+    @Parameter(property = "entityMetaInfoClassOutputPackage", defaultValue = "domain._share.meta")
+    private String entityMetaInfoClassOutputPackage = "domain._share.meta";
     /**
      * 实体辅助类输出模式，绝对路径或相对路径，abs|ref
      *
@@ -433,6 +433,9 @@ public class GenEntityMojo extends AbstractMojo {
                 ResultSetMetaData metaData = rs.getMetaData();
                 for (int i = 1; i <= metaData.getColumnCount(); i++) {
                     map.put(metaData.getColumnName(i), rs.getObject(i));
+                    if(rs.getObject(i)!=null && rs.getObject(i) instanceof byte[]){
+                        map.put(metaData.getColumnName(i), new String((byte[])rs.getObject(i)));
+                    }
                 }
                 result.add(map);
             }
