@@ -370,7 +370,6 @@ public class GenEntityMojo extends AbstractMojo {
         getLog().info("");
         getLog().info("----------------开始生成枚举----------------");
         getLog().info("");
-        getLog().info("");
         for (Map.Entry<String, Map<Integer, String[]>> entry : EnumConfigMap.entrySet()) {
             try {
                 writeEnumSourceFile(entry.getValue(), entry.getKey(), EnumPackageMap.get(entry.getKey()), domainModulePath, enumValueField, enumNameField);
@@ -379,7 +378,8 @@ public class GenEntityMojo extends AbstractMojo {
                 getLog().error(e);
             }
         }
-        getLog().info("----------------完成字段枚举----------------");
+        getLog().info("----------------完成生成枚举----------------");
+        getLog().info("");
         getLog().info("");
         getLog().info("----------------开始生成实体----------------");
         getLog().info("");
@@ -410,8 +410,8 @@ public class GenEntityMojo extends AbstractMojo {
                 getLog().error(e);
             }
         }
-        getLog().info("");
         getLog().info("----------------完成生成实体----------------");
+        getLog().info("");
     }
 
     public List<Map<String, Object>> executeQuery(String sql, String connectionString, String user, String pwd) {
@@ -1396,9 +1396,8 @@ public class GenEntityMojo extends AbstractMojo {
         writeLine(out, " */");
         writeLine(out, "public enum " + enumType + " {");
         writeLine(out, "");
-        getLog().info(enumConfigs.toString());
         for (Map.Entry<Integer, String[]> entry : enumConfigs.entrySet()) {
-
+            getLog().info(entry.getValue()[0] + " = " + entry.getKey() + " : " + entry.getValue()[1]);
             writeLine(out, "    /**");
             writeLine(out, "     * " + entry.getValue()[1]);
             writeLine(out, "     */");
