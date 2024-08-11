@@ -866,6 +866,7 @@ public class GenEntityMojo extends AbstractMojo {
                 "lombok.Builder",
                 "lombok.Getter",
                 "lombok.NoArgsConstructor",
+                "org.hibernate.annotations.GenericGenerator",
                 "org.hibernate.annotations.DynamicInsert",
                 "org.hibernate.annotations.DynamicUpdate",
                 "org.hibernate.annotations.Fetch",
