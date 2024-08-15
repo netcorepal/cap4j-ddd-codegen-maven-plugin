@@ -94,31 +94,41 @@ public class GenRepositoryMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         this.getLog().info("开始生成仓储代码");
 
-        File currentDirFile = new File("");
-        String absoluteCurrentDir = currentDirFile.getAbsolutePath();
-
-        String domainModulePath, adapterModulePath;
+        // 项目结构解析
+        String absoluteCurrentDir, projectDir, domainModulePath, applicationModulePath, adapterModulePath;
+        absoluteCurrentDir = new File("").getAbsolutePath();
         if (multiModule) {
-            getLog().info("多模块项目");
-            String projectDir = new File(absoluteCurrentDir).getParent();
-            getLog().info("项目目录：" + projectDir);
+            projectDir = new File(FileUtils.catPath(absoluteCurrentDir, "pom.xml")).exists()
+                    ? absoluteCurrentDir
+                    : new File(absoluteCurrentDir).getParent();
 
             domainModulePath = Arrays.stream(new File(projectDir).listFiles())
                     .filter(path -> path.getAbsolutePath().endsWith(moduleNameDomain))
+                    .findFirst().get().getAbsolutePath();
+            applicationModulePath = Arrays.stream(new File(projectDir).listFiles())
+                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameApplication))
                     .findFirst().get().getAbsolutePath();
             adapterModulePath = Arrays.stream(new File(projectDir).listFiles())
                     .filter(path -> path.getAbsolutePath().endsWith(moduleNameAdapter))
                     .findFirst().get().getAbsolutePath();
         } else {
-            getLog().info("单模块项目");
+            projectDir = absoluteCurrentDir;
             domainModulePath = absoluteCurrentDir;
+            applicationModulePath = absoluteCurrentDir;
             adapterModulePath = absoluteCurrentDir;
         }
-        getLog().info("模块目录：" + absoluteCurrentDir);
         String basePackage = org.apache.commons.lang3.StringUtils.isNotBlank(this.basePackage)
                 ? this.basePackage
                 : SourceFileUtils.resolveBasePackage(domainModulePath);
+        getLog().info(multiModule ? "多模块项目" : "单模块项目");
+        getLog().info("项目目录：" + projectDir);
+        getLog().info("适配层层层目录：" + adapterModulePath);
+        getLog().info("应用层层目录：" + applicationModulePath);
+        getLog().info("领域层目录：" + domainModulePath);
         getLog().info("基础包名：" + basePackage);
+
+        //
+
         if (StringUtils.isBlank(aggregateRepositoryBaseClass)) {
             // 默认聚合仓储基类
             aggregateRepositoryBaseClass = "org.netcorepal.cap4j.ddd.domain.repo.AggregateRepository<${EntityType}, ${IdentityType}>";

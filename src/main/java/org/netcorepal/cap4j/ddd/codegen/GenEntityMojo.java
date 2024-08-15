@@ -29,6 +29,42 @@ import static org.netcorepal.cap4j.ddd.codegen.misc.SourceFileUtils.writeLine;
  */
 @Mojo(name = "gen-entity")
 public class GenEntityMojo extends AbstractMojo {
+    /**
+     * 是否多项目
+     *
+     * @parameter expression="${multiModule}"
+     */
+    @Parameter(property = "multiModule", defaultValue = "false")
+    private Boolean multiModule = false;
+    /**
+     * domain模块名称
+     *
+     * @parameter expression="${moduleNameDomain}"
+     */
+    @Parameter(property = "moduleNameDomain", defaultValue = "-domain")
+    private String moduleNameDomain = "-domain";
+    /**
+     * application模块名称
+     *
+     * @parameter expression="${moduleNameApplication}"
+     */
+    @Parameter(property = "moduleNameApplication", defaultValue = "-application")
+    private String moduleNameApplication = "-application";
+    /**
+     * adapter模块名称
+     *
+     * @parameter expression="${moduleNameAdapter}"
+     */
+    @Parameter(property = "moduleNameAdapter", defaultValue = "-adapter")
+    private String moduleNameAdapter = "-adapter";
+
+    /**
+     * 基础包路径
+     *
+     * @parameter expression="${basePackage}"
+     */
+    @Parameter(property = "basePackage", defaultValue = "")
+    private String basePackage = "";
 
     /**
      * @parameter expression="${connectionString}"
@@ -186,42 +222,6 @@ public class GenEntityMojo extends AbstractMojo {
     private Boolean generateBuild = false;
 
     /**
-     * 是否多项目
-     *
-     * @parameter expression="${multiModule}"
-     */
-    @Parameter(property = "multiModule", defaultValue = "false")
-    private Boolean multiModule = false;
-    /**
-     * domain模块名称
-     *
-     * @parameter expression="${moduleNameDomain}"
-     */
-    @Parameter(property = "moduleNameDomain", defaultValue = "-domain")
-    private String moduleNameDomain = "-domain";
-    /**
-     * application模块名称
-     *
-     * @parameter expression="${moduleNameApplication}"
-     */
-    @Parameter(property = "moduleNameApplication", defaultValue = "-application")
-    private String moduleNameApplication = "-application";
-    /**
-     * adapter模块名称
-     *
-     * @parameter expression="${moduleNameAdapter}"
-     */
-    @Parameter(property = "moduleNameAdapter", defaultValue = "-adapter")
-    private String moduleNameAdapter = "-adapter";
-
-    /**
-     * 基础包路径
-     *
-     * @parameter expression="${basePackage}"
-     */
-    @Parameter(property = "basePackage", defaultValue = "")
-    private String basePackage = "";
-    /**
      * 实体辅助类输出包
      *
      * @parameter expression="${entityMetaInfoClassOutputPackage}"
@@ -258,17 +258,16 @@ public class GenEntityMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        this.getLog().info("开始生成实体代码");
         MysqlSchemaUtils.mojo = this;
 
-        this.getLog().info("开始生成实体代码");
-        File currentDirFile = new File("");
-        String absoluteCurrentDir = currentDirFile.getAbsolutePath();
-
-        String domainModulePath, applicationModulePath;
+        // 项目结构解析
+        String absoluteCurrentDir, projectDir, domainModulePath, applicationModulePath, adapterModulePath;
+        absoluteCurrentDir = new File("").getAbsolutePath();
         if (multiModule) {
-            getLog().info("多模块项目");
-            String projectDir = new File(absoluteCurrentDir).getParent();
-            getLog().info("项目目录：" + projectDir);
+            projectDir = new File(FileUtils.catPath(absoluteCurrentDir, "pom.xml")).exists()
+                    ? absoluteCurrentDir
+                    : new File(absoluteCurrentDir).getParent();
 
             domainModulePath = Arrays.stream(new File(projectDir).listFiles())
                     .filter(path -> path.getAbsolutePath().endsWith(moduleNameDomain))
@@ -276,21 +275,30 @@ public class GenEntityMojo extends AbstractMojo {
             applicationModulePath = Arrays.stream(new File(projectDir).listFiles())
                     .filter(path -> path.getAbsolutePath().endsWith(moduleNameApplication))
                     .findFirst().get().getAbsolutePath();
+            adapterModulePath = Arrays.stream(new File(projectDir).listFiles())
+                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameAdapter))
+                    .findFirst().get().getAbsolutePath();
         } else {
-            getLog().info("单模块项目");
+            projectDir = absoluteCurrentDir;
             domainModulePath = absoluteCurrentDir;
             applicationModulePath = absoluteCurrentDir;
+            adapterModulePath = absoluteCurrentDir;
         }
-        getLog().info("模块目录：" + absoluteCurrentDir);
-
         String basePackage = StringUtils.isNotBlank(this.basePackage)
                 ? this.basePackage
                 : SourceFileUtils.resolveBasePackage(domainModulePath);
+        getLog().info(multiModule ? "多模块项目" : "单模块项目");
+        getLog().info("项目目录：" + projectDir);
+        getLog().info("适配层层层目录：" + adapterModulePath);
+        getLog().info("应用层层目录：" + applicationModulePath);
+        getLog().info("领域层目录：" + domainModulePath);
         getLog().info("基础包名：" + basePackage);
+
         if (StringUtils.isBlank(entityMetaInfoClassOutputPackage)) {
             entityMetaInfoClassOutputPackage = "domain._share.meta";
         }
 
+        // 数据库解析
         String tableSql = "select * from `information_schema`.`tables` where table_schema= '" + schema + "'";
         String columnSql = "select * from `information_schema`.`columns` where table_schema= '" + schema + "'";
         if (StringUtils.isNotBlank(table)) {
@@ -312,7 +320,7 @@ public class GenEntityMojo extends AbstractMojo {
         for (Map<String, Object> table :
                 tables) {
             List<Map<String, Object>> tableColumns = columns.stream().filter(col -> col.get("TABLE_NAME").equals(table.get("TABLE_NAME")))
-                    .sorted((a, b) -> (Integer.parseInt(a.get("ORDINAL_POSITION").toString()))- Integer.parseInt( b.get("ORDINAL_POSITION").toString()))
+                    .sorted((a, b) -> (Integer.parseInt(a.get("ORDINAL_POSITION").toString())) - Integer.parseInt(b.get("ORDINAL_POSITION").toString()))
                     .collect(Collectors.toList());
             TableMap.put(MysqlSchemaUtils.getTableName(table), table);
             ColumnsMap.put(MysqlSchemaUtils.getTableName(table), tableColumns);
@@ -321,15 +329,13 @@ public class GenEntityMojo extends AbstractMojo {
                     MysqlSchemaUtils.getTableName(table),
                     String.join(", ", tableColumns.stream().map(c -> String.format("%s %s", c.get("DATA_TYPE"), MysqlSchemaUtils.getColumnName(c))).collect(Collectors.toList()))));
         }
+        getLog().info("");
+        getLog().info("");
 
-        getLog().info("");
-        getLog().info("");
         getLog().info("----------------开始字段扫描----------------");
         getLog().info("");
-
-
         for (Map<String, Object> table :
-                tables) {
+                TableMap.values()) {
             List<Map<String, Object>> tableColumns = ColumnsMap.get(MysqlSchemaUtils.getTableName(table));
             // 解析表关系
             getLog().info("开始解析表关系:" + MysqlSchemaUtils.getTableName(table));
@@ -348,7 +354,7 @@ public class GenEntityMojo extends AbstractMojo {
         }
 
         for (Map<String, Object> table :
-                tables) {
+                TableMap.values()) {
             if (isIgnoreTable(table)) {
                 continue;
             }
@@ -364,10 +370,11 @@ public class GenEntityMojo extends AbstractMojo {
                 }
             }
         }
-
         getLog().info("----------------完成字段扫描----------------");
+
         getLog().info("");
         getLog().info("");
+
         getLog().info("----------------开始生成枚举----------------");
         getLog().info("");
         for (Map.Entry<String, Map<Integer, String[]>> entry : EnumConfigMap.entrySet()) {
@@ -379,11 +386,12 @@ public class GenEntityMojo extends AbstractMojo {
             }
         }
         getLog().info("----------------完成生成枚举----------------");
+
         getLog().info("");
-        getLog().info("");
-        getLog().info("----------------开始生成实体----------------");
         getLog().info("");
 
+        getLog().info("----------------开始生成实体----------------");
+        getLog().info("");
         if (generateSchema) {
             try {
                 writeBaseSechemaSourceFile(basePackage, applicationModulePath);
@@ -393,7 +401,7 @@ public class GenEntityMojo extends AbstractMojo {
             }
         }
         for (Map<String, Object> table :
-                tables) {
+                TableMap.values()) {
             List<Map<String, Object>> tableColumns = ColumnsMap.get(MysqlSchemaUtils.getTableName(table));
             try {
                 writeEntitySourceFile(table, tableColumns, tablePackageMap, relations, basePackage, domainModulePath);
@@ -433,8 +441,8 @@ public class GenEntityMojo extends AbstractMojo {
                 ResultSetMetaData metaData = rs.getMetaData();
                 for (int i = 1; i <= metaData.getColumnCount(); i++) {
                     map.put(metaData.getColumnName(i), rs.getObject(i));
-                    if(rs.getObject(i)!=null && rs.getObject(i) instanceof byte[]){
-                        map.put(metaData.getColumnName(i), new String((byte[])rs.getObject(i)));
+                    if (rs.getObject(i) != null && rs.getObject(i) instanceof byte[]) {
+                        map.put(metaData.getColumnName(i), new String((byte[]) rs.getObject(i)));
                     }
                 }
                 result.add(map);
@@ -1022,7 +1030,7 @@ public class GenEntityMojo extends AbstractMojo {
         if (MysqlSchemaUtils.hasIdGenerator(table)) {
             writeLine(out, "    @GeneratedValue(generator = \"" + MysqlSchemaUtils.getIdGenerator(table) + "\")");
             writeLine(out, "    @GenericGenerator(name = \"" + MysqlSchemaUtils.getIdGenerator(table) + "\", strategy = \"" + MysqlSchemaUtils.getIdGenerator(table) + "\")");
-        } else if(StringUtils.isNotBlank(idGenerator)){
+        } else if (StringUtils.isNotBlank(idGenerator)) {
             writeLine(out, "    @GeneratedValue(generator = \"" + idGenerator + "\")");
             writeLine(out, "    @GenericGenerator(name = \"" + idGenerator + "\", strategy = \"" + idGenerator + "\")");
         } else {
@@ -1456,7 +1464,7 @@ public class GenEntityMojo extends AbstractMojo {
     public void writeSchemaSourceFile(Map<String, Object> table, List<Map<String, Object>> columns, Map<String, String> tablePackageMap, Map<String, Map<String, String>> relations, String basePackage, String baseDir) throws IOException {
         String tableName = MysqlSchemaUtils.getTableName(table);
         String packageName = null;
-        if("abs".equalsIgnoreCase(entityMetaInfoClassOutputMode)) {
+        if ("abs".equalsIgnoreCase(entityMetaInfoClassOutputMode)) {
             packageName = basePackage + "." + entityMetaInfoClassOutputPackage + ".schemas";
         } else {
             packageName = tablePackageMap.get(tableName) + ".schemas";
@@ -1652,7 +1660,7 @@ public class GenEntityMojo extends AbstractMojo {
         String simpleClassName = "Schema";
 
         new File(SourceFileUtils.resolveDirectory(baseDir, packageName)).mkdirs();
-        String filePath = SourceFileUtils.resolveSourceFile(baseDir, packageName, "Schema");
+        String filePath = SourceFileUtils.resolveSourceFile(baseDir, packageName, simpleClassName);
 
         BufferedWriter out = new BufferedWriter(new FileWriter(filePath));
         writeLine(out, "package " + packageName + ";");
@@ -1673,7 +1681,7 @@ public class GenEntityMojo extends AbstractMojo {
                 " * @author <template>\n" +
                 " * @date \n" +
                 " */\n" +
-                "public class Schema {\n" +
+                "public class " + simpleClassName + " {\n" +
                 "\n" +
                 "    /**\n" +
                 "     * 断言构建器\n" +
