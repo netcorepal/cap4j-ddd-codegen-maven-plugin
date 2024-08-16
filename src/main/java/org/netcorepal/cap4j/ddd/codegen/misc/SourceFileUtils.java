@@ -1,11 +1,13 @@
 package org.netcorepal.cap4j.ddd.codegen.misc;
 
+import com.sun.org.apache.xml.internal.serialize.LineSeparator;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.plexus.util.FileUtils;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -50,6 +52,42 @@ public class SourceFileUtils {
         }
         Cache.put(baseDir, result);
         return result;
+    }
+
+    public static String loadFileContent(String location) throws IOException {
+        String content = "";
+        if (location.startsWith("http://") || location.startsWith("https://")) {
+            try {
+                URL url = new URL(location);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    content += line;
+                }
+                reader.close();
+            } catch (IOException ex){
+                throw ex;
+            }
+        } else {
+            try {
+                content = new String(Files.readAllBytes(Paths.get(location)));
+            } catch (IOException ex){
+                throw ex;
+            }
+        }
+        return content;
+    }
+
+    public static String loadResourceFileContent(String path) throws IOException {
+        InputStream in = SourceFileUtils.class.getClassLoader().getResourceAsStream(path);
+        InputStreamReader reader = new InputStreamReader(in);
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        StringBuilder stringBuilder = new StringBuilder();
+        bufferedReader.lines().forEachOrdered(line -> {
+            stringBuilder.append(line);
+            stringBuilder.append(LineSeparator.Unix);
+        });
+        return stringBuilder.toString();
     }
 
     public static String resolveDirectory(String baseDir, String packageName) {

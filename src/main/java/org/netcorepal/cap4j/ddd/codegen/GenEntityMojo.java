@@ -1,5 +1,6 @@
 package org.netcorepal.cap4j.ddd.codegen;
 
+import org.codehaus.plexus.util.FileUtils;
 import org.netcorepal.cap4j.ddd.codegen.misc.Inflector;
 import org.netcorepal.cap4j.ddd.codegen.misc.MysqlSchemaUtils;
 import org.netcorepal.cap4j.ddd.codegen.misc.SourceFileUtils;
@@ -9,7 +10,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.codehaus.plexus.util.FileUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -265,7 +265,7 @@ public class GenEntityMojo extends AbstractMojo {
         String absoluteCurrentDir, projectDir, domainModulePath, applicationModulePath, adapterModulePath;
         absoluteCurrentDir = new File("").getAbsolutePath();
         if (multiModule) {
-            projectDir = new File(FileUtils.catPath(absoluteCurrentDir, "pom.xml")).exists()
+            projectDir = new File(absoluteCurrentDir + File.separator + "pom.xml").exists()
                     ? absoluteCurrentDir
                     : new File(absoluteCurrentDir).getParent();
 
@@ -289,8 +289,8 @@ public class GenEntityMojo extends AbstractMojo {
                 : SourceFileUtils.resolveBasePackage(domainModulePath);
         getLog().info(multiModule ? "多模块项目" : "单模块项目");
         getLog().info("项目目录：" + projectDir);
-        getLog().info("适配层层层目录：" + adapterModulePath);
-        getLog().info("应用层层目录：" + applicationModulePath);
+        getLog().info("适配层目录：" + adapterModulePath);
+        getLog().info("应用层目录：" + applicationModulePath);
         getLog().info("领域层目录：" + domainModulePath);
         getLog().info("基础包名：" + basePackage);
 
