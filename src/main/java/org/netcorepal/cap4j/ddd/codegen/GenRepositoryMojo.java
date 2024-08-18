@@ -1,11 +1,9 @@
 package org.netcorepal.cap4j.ddd.codegen;
 
 import org.netcorepal.cap4j.ddd.codegen.misc.SourceFileUtils;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.StringUtils;
 
@@ -19,76 +17,7 @@ import static org.netcorepal.cap4j.ddd.codegen.misc.SourceFileUtils.writeLine;
  * @date 2022-02-14
  */
 @Mojo(name = "gen-repository")
-public class GenRepositoryMojo extends AbstractMojo {
-    /**
-     * 是否多项目
-     *
-     * @parameter expression="${multiModule}"
-     */
-    @Parameter(property = "multiModule", defaultValue = "false")
-    private Boolean multiModule = false;
-    /**
-     * domain模块名称
-     *
-     * @parameter expression="${moduleNameDomain}"
-     */
-    @Parameter(property = "moduleNameDomain", defaultValue = "-domain")
-    private String moduleNameDomain = "-domain";
-    /**
-     * application模块名称
-     *
-     * @parameter expression="${moduleNameApplication}"
-     */
-    @Parameter(property = "moduleNameApplication", defaultValue = "-application")
-    private String moduleNameApplication = "-application";
-    /**
-     * adapter模块名称
-     *
-     * @parameter expression="${moduleNameAdapter}"
-     */
-    @Parameter(property = "moduleNameAdapter", defaultValue = "-adapter")
-    private String moduleNameAdapter = "-adapter";
-
-    /**
-     * 基础包路径
-     *
-     * @parameter expression="${basePackage}"
-     */
-    @Parameter(property = "basePackage", defaultValue = "")
-    private String basePackage = "";
-
-    /**
-     * 忽略聚合根，逗号分割
-     *
-     * @parameter expression="${ignoreAggregateRoots}"
-     */
-    @Parameter(property = "ignoreAggregateRoots", defaultValue = "")
-    private String ignoreAggregateRoots = "";
-
-
-    /**
-     * 聚合仓储基类型
-     *
-     * @parameter expression="${aggregateRepositoryBaseClass}"
-     */
-    @Parameter(property = "aggregateRepositoryBaseClass", defaultValue = "")
-    private String aggregateRepositoryBaseClass = "";
-
-    /**
-     * 聚合唯一标识类型
-     *
-     * @parameter expression="${aggregateIdentityClass}"
-     */
-    @Parameter(property = "aggregateIdentityClass", defaultValue = "Long")
-    private String aggregateIdentityClass = "Long";
-
-    /**
-     * 聚合仓储自定义代码
-     *
-     * @parameter expression="${aggregateRepositoryCustomerCode}"
-     */
-    @Parameter(property = "aggregateRepositoryCustomerCode", defaultValue = "")
-    private String aggregateRepositoryCustomerCode = "";
+public class GenRepositoryMojo extends MyAbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -103,13 +32,13 @@ public class GenRepositoryMojo extends AbstractMojo {
                     : new File(absoluteCurrentDir).getParent();
 
             domainModulePath = Arrays.stream(new File(projectDir).listFiles())
-                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameDomain))
+                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameSuffix4Domain))
                     .findFirst().get().getAbsolutePath();
             applicationModulePath = Arrays.stream(new File(projectDir).listFiles())
-                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameApplication))
+                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameSuffix4Application))
                     .findFirst().get().getAbsolutePath();
             adapterModulePath = Arrays.stream(new File(projectDir).listFiles())
-                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameAdapter))
+                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameSuffix4Adapter))
                     .findFirst().get().getAbsolutePath();
         } else {
             projectDir = absoluteCurrentDir;

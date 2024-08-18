@@ -2,11 +2,9 @@ package org.netcorepal.cap4j.ddd.codegen;
 
 import com.alibaba.fastjson.JSON;
 import lombok.Data;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.FileUtils;
 import org.netcorepal.cap4j.ddd.codegen.misc.SourceFileUtils;
@@ -14,6 +12,7 @@ import org.netcorepal.cap4j.ddd.codegen.misc.SourceFileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 生成项目目录结构
@@ -22,23 +21,7 @@ import java.util.List;
  * @date 2024/8/15
  */
 @Mojo(name = "gen-arch")
-public class GenArchMojo extends AbstractMojo {
-
-    /**
-     * 基础包路径
-     *
-     * @parameter expression="${basePackage}"
-     */
-    @Parameter(property = "basePackage", defaultValue = "")
-    private String basePackage = "";
-
-    /**
-     * 模板文件地址
-     *
-     * @parameter expression="${archTemplate}"
-     */
-    @Parameter(property = "archTemplate", defaultValue = "")
-    private String archTemplate = "";
+public class GenArchMojo extends MyAbstractMojo {
 
     /**
      * 脚手架模板配置节点
@@ -90,7 +73,7 @@ public class GenArchMojo extends AbstractMojo {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        if(basePackage==null || basePackage.isEmpty()){
+        if (basePackage == null || basePackage.isEmpty()) {
             getLog().warn("请设置basePackage参数");
             return;
         }
@@ -204,13 +187,61 @@ public class GenArchMojo extends AbstractMojo {
     }
 
     public String escapeContent(String content) {
-        content = content.replace("${basePackage}", basePackage);
         content = content.replace("${groupId}", projectGroupId);
         content = content.replace("${artifactId}", projectArtifactId);
         content = content.replace("${version}", projectVersion);
+        content = content.replace("${archTemplate}", archTemplate);
+        content = content.replace("${basePackage}", basePackage);
+        content = content.replace("${multiModule}", multiModule ? "true" : "false");
+        content = content.replace("${moduleNameSuffix4Adapter}", moduleNameSuffix4Adapter);
+        content = content.replace("${moduleNameSuffix4Domain}", moduleNameSuffix4Domain);
+        content = content.replace("${moduleNameSuffix4Application}", moduleNameSuffix4Application);
+        content = content.replace("${connectionString}", connectionString);
+        content = content.replace("${user}", user);
+        content = content.replace("${pwd}", pwd);
+        content = content.replace("${schema}", schema);
+        content = content.replace("${table}", table);
+        content = content.replace("${ignoreTable}", ignoreTable);
+        content = content.replace("${idField}", idField);
+        content = content.replace("${versionField}", versionField);
+        content = content.replace("${deletedField}", deletedField);
+        content = content.replace("${readonlyFields}", readonlyFields);
+        content = content.replace("${ignoreFields}", ignoreFields);
+        content = content.replace("${entityBaseClass}", entityBaseClass);
+        content = content.replace("${entityMetaInfoClassOutputPackage}", entityMetaInfoClassOutputPackage);
+        content = content.replace("${entityMetaInfoClassOutputMode}", entityMetaInfoClassOutputMode);
+        content = content.replace("${idGenerator}", idGenerator);
+        content = content.replace("${fetchType}", fetchType);
+        content = content.replace("${fetchMode}", fetchMode);
+        content = content.replace("${enumValueField}", enumValueField);
+        content = content.replace("${enumNameField}", enumNameField);
+        content = content.replace("${enumUnmatchedThrowException}", enumUnmatchedThrowException ? "true" : "false");
+        content = content.replace("${datePackage4Java}", datePackage4Java);
+        content = content.replace("${typeRemapping}", stringfyTypeRemapping());
+        content = content.replace("${generateDefault}", generateDefault ? "true" : "false");
+        content = content.replace("${generateDbType}", generateDbType ? "true" : "false");
+        content = content.replace("${generateSchema}", generateSchema ? "true" : "false");
+        content = content.replace("${generateBuild}", generateBuild ? "true" : "false");
+        content = content.replace("${aggregateRootAnnotation}", aggregateRootAnnotation);
+        content = content.replace("${aggregateRepositoryBaseClass}", aggregateRepositoryBaseClass);
+        content = content.replace("${aggregateIdentityClass}", aggregateIdentityClass);
+        content = content.replace("${aggregateRepositoryCustomerCode}", aggregateRepositoryCustomerCode);
+        content = content.replace("${ignoreAggregateRoots}", ignoreAggregateRoots);
         content = content.replace("${symbol_pound}", "#");
         content = content.replace("${symbol_escape}", "\\");
         content = content.replace("${symbol_dollar}", "$");
         return content;
+    }
+
+    private String stringfyTypeRemapping() {
+        if (typeRemapping == null || typeRemapping.isEmpty()) {
+            return "";
+        }
+        String result = "";
+        for (Map.Entry<String, String> kv :
+                typeRemapping.entrySet()) {
+            result += "<" + kv.getKey() + ">" + kv.getValue() + "</\"+kv.getKey()+\">";
+        }
+        return result;
     }
 }

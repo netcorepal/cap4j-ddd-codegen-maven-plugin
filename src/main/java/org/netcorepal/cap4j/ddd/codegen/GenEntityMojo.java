@@ -5,11 +5,9 @@ import org.netcorepal.cap4j.ddd.codegen.misc.Inflector;
 import org.netcorepal.cap4j.ddd.codegen.misc.MysqlSchemaUtils;
 import org.netcorepal.cap4j.ddd.codegen.misc.SourceFileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,228 +26,7 @@ import static org.netcorepal.cap4j.ddd.codegen.misc.SourceFileUtils.writeLine;
  * @date 2022-02-16
  */
 @Mojo(name = "gen-entity")
-public class GenEntityMojo extends AbstractMojo {
-    /**
-     * 是否多项目
-     *
-     * @parameter expression="${multiModule}"
-     */
-    @Parameter(property = "multiModule", defaultValue = "false")
-    private Boolean multiModule = false;
-    /**
-     * domain模块名称
-     *
-     * @parameter expression="${moduleNameDomain}"
-     */
-    @Parameter(property = "moduleNameDomain", defaultValue = "-domain")
-    private String moduleNameDomain = "-domain";
-    /**
-     * application模块名称
-     *
-     * @parameter expression="${moduleNameApplication}"
-     */
-    @Parameter(property = "moduleNameApplication", defaultValue = "-application")
-    private String moduleNameApplication = "-application";
-    /**
-     * adapter模块名称
-     *
-     * @parameter expression="${moduleNameAdapter}"
-     */
-    @Parameter(property = "moduleNameAdapter", defaultValue = "-adapter")
-    private String moduleNameAdapter = "-adapter";
-
-    /**
-     * 基础包路径
-     *
-     * @parameter expression="${basePackage}"
-     */
-    @Parameter(property = "basePackage", defaultValue = "")
-    private String basePackage = "";
-
-    /**
-     * @parameter expression="${connectionString}"
-     */
-    @Parameter(property = "connectionString")
-    private String connectionString;
-    /**
-     * @parameter expression="${user}"
-     */
-    @Parameter(property = "user")
-    private String user;
-    /**
-     * @parameter expression="${pwd}"
-     */
-    @Parameter(property = "pwd")
-    private String pwd;
-    /**
-     * @parameter expression="${schema}"
-     */
-    @Parameter(property = "schema")
-    private String schema;
-    /**
-     * @parameter expression="${table}"
-     */
-    @Parameter(property = "table", defaultValue = "%")
-    private String table;
-    /**
-     * @parameter expression="${ignoreTable}"
-     */
-    @Parameter(property = "ignoreTable", defaultValue = "")
-    private String ignoreTable;
-    /**
-     * 主键字段名 默认 id
-     *
-     * @parameter expression="${idField}"
-     */
-    @Parameter(property = "idField", defaultValue = "id")
-    private String idField = "id";
-    /**
-     * 主键生成器 默认自增策略
-     *
-     * @parameter expression="${idGenerator}"
-     */
-    @Parameter(property = "idGenerator", defaultValue = "")
-    private String idGenerator = "";
-
-    /**
-     * 乐观锁字段
-     *
-     * @parameter expression="${versionField}"
-     */
-    @Parameter(property = "versionField", defaultValue = "version")
-    private String versionField = "version";
-    /**
-     * 软删字段
-     *
-     * @parameter expression="${deletedField}"
-     */
-    @Parameter(property = "deletedField", defaultValue = "deleted")
-    private String deletedField = "deleted";
-    /**
-     * 标记只读字段，逗号","或分号";"分割，不会通过ORM更新到数据库
-     *
-     * @parameter expression="${readonlyFields}"
-     */
-    @Parameter(property = "readonlyFields", defaultValue = "")
-    private String readonlyFields = "";
-    /**
-     * 标记忽略字段，逗号","或分号";"分割，不会通过ORM绑定到实体
-     *
-     * @parameter expression="${ignoreFields}"
-     */
-    @Parameter(property = "ignoreFields", defaultValue = "")
-    private String ignoreFields = "";
-    /**
-     * 枚举【值】字段配置
-     *
-     * @parameter expression="${enumValueField}"
-     */
-    @Parameter(property = "enumValueField", defaultValue = "value")
-    private String enumValueField = "value";
-    /**
-     * 枚举【名】字段配置
-     *
-     * @parameter expression="${enumNameField}"
-     */
-    @Parameter(property = "enumNameField", defaultValue = "name")
-    private String enumNameField = "name";
-    /**
-     * 枚举不匹配时，是否抛出异常
-     *
-     * @parameter expression="${enumUnmatchedThrowException}"
-     */
-    @Parameter(property = "enumUnmatchedThrowException", defaultValue = "true")
-    private Boolean enumUnmatchedThrowException = true;
-    /**
-     * 生成默认值，来源数据库默认值
-     *
-     * @parameter expression="${generateDefault}"
-     */
-    @Parameter(property = "generateDefault", defaultValue = "false")
-    private Boolean generateDefault = false;
-    /**
-     * 数据库字段类型 到 代码类型 映射
-     *
-     * @parameter expression="${typeRemapping}"
-     */
-    @Parameter(property = "typeRemapping", defaultValue = "")
-    private Map<String, String> typeRemapping = new HashMap<>();
-
-    /**
-     * 日期类型映射使用的包 默认java.util
-     * java.util | java.time
-     *
-     * @parameter expression="${datePackage}"
-     */
-    @Parameter(property = "datePackage4Java", defaultValue = "java.util")
-    private String datePackage4Java = "java.util";
-
-    /**
-     * 生成数据库字段类型到字段注释中
-     *
-     * @parameter expression="${generateDbType}"
-     */
-    @Parameter(property = "generateDbType", defaultValue = "false")
-    private Boolean generateDbType = false;
-    /**
-     * 生成Schema类
-     *
-     * @parameter expression="${generateSchema}"
-     */
-    @Parameter(property = "generateSchema", defaultValue = "false")
-    private Boolean generateSchema = false;
-
-    /**
-     * 关联实体加载模式 LAZY | EAGER
-     *
-     * @parameter expression="${fetchType}"
-     */
-    @Parameter(property = "fetchType", defaultValue = "EAGER")
-    private String fetchType = "EAGER";
-    /**
-     * 关联实体加载模式 SUBSELECT | JOIN | SELECT
-     *
-     * @parameter expression="${fetchMode}"
-     */
-    @Parameter(property = "fetchMode", defaultValue = "SUBSELECT")
-    private String fetchMode = "SUBSELECT";
-    /**
-     * 生成EntitBuilder类
-     *
-     * @parameter expression="${generateBuild}"
-     */
-    @Parameter(property = "generateBuild", defaultValue = "false")
-    private Boolean generateBuild = false;
-
-    /**
-     * 实体辅助类输出包
-     *
-     * @parameter expression="${entityMetaInfoClassOutputPackage}"
-     */
-    @Parameter(property = "entityMetaInfoClassOutputPackage", defaultValue = "domain._share.meta")
-    private String entityMetaInfoClassOutputPackage = "domain._share.meta";
-    /**
-     * 实体辅助类输出模式，绝对路径或相对路径，abs|ref
-     *
-     * @parameter expression="${entityMetaInfoClassOutputMode}"
-     */
-    @Parameter(property = "entityMetaInfoClassOutputMode", defaultValue = "")
-    private String entityMetaInfoClassOutputMode = "abs";
-    /**
-     * 实体基础类
-     *
-     * @parameter expression="${entityBaseClass}"
-     */
-    @Parameter(property = "entityBaseClass", defaultValue = "")
-    private String entityBaseClass = "";
-    /**
-     * 聚合根注解
-     *
-     * @parameter expression="${aggregateRootAnnotation}"
-     */
-    @Parameter(property = "aggregateRootAnnotation", defaultValue = "")
-    private String aggregateRootAnnotation = "";
-
+public class GenEntityMojo extends MyAbstractMojo {
 
     private Map<String, Map<String, Object>> TableMap = new HashMap<>();
     private Map<String, List<Map<String, Object>>> ColumnsMap = new HashMap<>();
@@ -270,13 +47,13 @@ public class GenEntityMojo extends AbstractMojo {
                     : new File(absoluteCurrentDir).getParent();
 
             domainModulePath = Arrays.stream(new File(projectDir).listFiles())
-                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameDomain))
+                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameSuffix4Domain))
                     .findFirst().get().getAbsolutePath();
             applicationModulePath = Arrays.stream(new File(projectDir).listFiles())
-                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameApplication))
+                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameSuffix4Application))
                     .findFirst().get().getAbsolutePath();
             adapterModulePath = Arrays.stream(new File(projectDir).listFiles())
-                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameAdapter))
+                    .filter(path -> path.getAbsolutePath().endsWith(moduleNameSuffix4Adapter))
                     .findFirst().get().getAbsolutePath();
         } else {
             projectDir = absoluteCurrentDir;
